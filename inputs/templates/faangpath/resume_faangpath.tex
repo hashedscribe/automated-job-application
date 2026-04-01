@@ -1,0 +1,67 @@
+\documentclass{resume} % Use the custom resume.cls style
+
+\input{config.tex}
+\usepackage[left=0.3 in,top=0.3in,right=0.3 in,bottom=0.3in]{geometry} % Document margins
+\newcommand{\tab}[1]{\hspace{.2667\textwidth}\rlap{#1}} 
+\newcommand{\itab}[1]{\hspace{0em}\rlap{#1}}
+
+
+\name{\fullname} % Your name
+% You can merge both of these into a single line, if you do not have a website.
+\address{\phone \! \\ \location} 
+\address{\href{mailto:{\email}}{\email} \\ \href{https:{\linkedin}}{\linkedin} \\ \href{{\website}}{\website}}  %
+\usepackage[sfdefault]{roboto}
+\usepackage[T1]{fontenc}
+\begin{document}
+
+%----------------------------------------------------------------------------------------
+%	OBJECTIVE
+%----------------------------------------------------------------------------------------
+
+\objective
+
+%----------------------------------------------------------------------------------------
+%	EDUCATION SECTION
+%----------------------------------------------------------------------------------------
+
+\begin{rSection}{Education}
+
+\education
+
+\end{rSection}
+
+%----------------------------------------------------------------------------------------
+% TECHINICAL STRENGTHS	
+%----------------------------------------------------------------------------------------
+\begin{rSection}{SKILLS}
+
+\begin{tabular}{ @{} >{\bfseries}l @{\hspace{6ex}} l }
+\skills
+\end{tabular}
+\end{rSection}
+
+\begin{rSection}{EXPERIENCE}
+
+\experience
+
+\end{rSection} 
+
+%----------------------------------------------------------------------------------------
+%	WORK EXPERIENCE SECTION
+%----------------------------------------------------------------------------------------
+
+\begin{rSection}{PROJECTS}
+\vspace{-1.25em}
+    \projects
+\end{rSection} 
+
+%----------------------------------------------------------------------------------------
+\begin{rSection}{Extra-Curricular Activities} 
+\begin{itemize}
+    \extracurriculars
+\end{itemize}
+\end{rSection}
+
+
+
+\end{document}

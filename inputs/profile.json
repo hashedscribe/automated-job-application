@@ -1,0 +1,63 @@
+{
+    "_usage": "Fill out the following fields with all relevant information.",
+
+    "profile": {
+        "first": "Firstname",
+        "last": "Lastname",
+        "contact": {
+            "phone": "+X (XXX) XXX-XXXX",
+            "email": "username@example.com",
+            "location": "City, State/Province, Country",
+            "linkedin": "linkedin.com/in/username",
+            "website": "www.portfolio.com"
+        }
+    },
+
+    "education": [
+        {
+            "degree": "Degree Name",
+            "university": "University Name",
+            "years": "YYYY - YYYY",
+            "minor": "Minor Subject",
+            "honors": [
+                "Honor/Award 1",
+                "Honor/Award 2"
+            ]
+        }
+    ],
+
+    "skills": [
+        "Skill A",
+        "Skill B",
+        "Skill C"
+    ],
+    
+    "experience": [
+        {
+            "role": "Job Title",
+            "company": "Company Name",
+            "date": "Month YYYY - Present",
+            "location": "City, ST",
+            "points": [
+                "Achieved X using Y by performing Z.",
+                "Led a team of X to accomplish Y result."
+            ],
+            "tags": ["Python", "AWS", "Management"]
+        }
+    ],
+
+
+    "projects": [
+        {
+            "title": "Project Name",
+            "description": "A brief description of the technical implementation and the measurable impact of the project.",
+            "link": "https://github.com/username/project",
+            "tags": ["React", "Node.js"]
+        }
+    ],
+
+    "extracurriculars": [
+        "Description of volunteer work or leadership role",
+        "Description of relevant hobby or certification"
+    ]
+}
