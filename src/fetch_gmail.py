@@ -3,6 +3,7 @@ import base64
 import re
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
+from job_class import JobListing
 
 # get the search profile from config
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'config'))
@@ -16,16 +17,20 @@ def get_gmail_service():
     creds = Credentials.from_authorized_user_file(TOKEN_PATH)
     return build('gmail', 'v1', credentials=creds)
 
-def fetch_job_emails():
+def fetch_job_emails(senders, additional_filters=""):
     service = get_gmail_service()
-    sender_filter = ' OR '.join(f'from:{s}' for s in SENDERS)
+    # get the filter for the senders
+    sender_filter = ' OR '.join(f'from:{s}' for s in senders)
     
+    # filter for the given senders and any additional filters
     results = service.users().messages().list(
         userId='me',
-        q=f'({sender_filter})'.join(GMAIL_ADDITIONAL_FILTERS)
+        q=f'({sender_filter})'.join(additional_filters)
     ).execute()
 
     messages = results.get('messages', [])
+    # TODO do we need the print ? i feel like when bash scripting 
+    # I'll care more about it
     print(f"Found {len(messages)} unread job alert emails")
     return messages
 
@@ -42,14 +47,31 @@ def get_email_body(service, msg_id):
     return ''
 
 def make_linkedin_listing(url, text):
-    # TODO adjust making the listing ? or we get the info and then make it in 
-    # the other function
+    # given the text, are we able to get enough information ? not sure
+    # visually i see hour if possible , company name, and location
+    # also bracket remote but idk if thats a full indicator
+    
+    # def could try lol
+    
+    # i think i need to fetch the outer <a>, that's what i was picking up before
+    # so i can use regex and have the nested linking !! huge.
+    
+    # so we go by sender and then just want to handle all the linkedin things
+    # per email, we want to match to the following. rn it seems like the regex 
+    # looks something like
+
+    # acc gonna do it in another file so it's easily changeable 
+    
+    print(url, text)
+    
     linkedin = r'https?://www\.linkedin\.com[^\s"<>]*/[\d]+/'
     linkedin_match = re.match(linkedin, url)
     
     sanitized_url = ""
     if linkedin_match:
         sanitized_url = linkedin_match.group().replace("/comm", "")
+    else:
+        return None
         
     clean_text = re.sub(r'<[^>]+>', '', text).strip()
     
@@ -69,39 +91,62 @@ def handle_indeed(url, text):
     
 
 def extract_job_links(html):
-    # TODO make this a dict with properties of job
-    seen = set()
-    
     # pulls all job URLs out of the email body
+    # i think this needs to change because linkedin weird
+    listings = []
     pattern = r'<a[^>]+href=["\']?(https?://[^\s"<>]*jobs[^\s"<>]*)["\']?[^>]*>(.*?)</a>'
     matches = re.findall(pattern, html, re.DOTALL)
     
+    # all the fields we could want to fill
+    
     for url, text in matches:
+        res = None
         if "linkedin" in url:
-            sanitized_url, clean_text = handle_linkedin(url, text)
+            res = make_linkedin_listing(url, text)
         elif "indeed" in url:
-            sanitized_url, clean_text = handle_indeed(url, text)
-            
-        # TODO build th
-        # return list(set(urls)) 
-        if sanitized_url in seen:
-            continue
+            res = handle_indeed(url, text)
         else:
-            seen.add(sanitized_url)
+            continue
+        
+        if res != None:
+            (title, company, salary, location, delivery, schedule, list_date,
+             link, notes) = res
+        else:
+            continue
+        
+        listing = JobListing(title, company)
+        # if we already seen this listing, update the information
+        # otherwise, add the relevant information and then append
+        # TODO can we clean this up any more? cheeck logics but its fine if not
+        if listing in listings:
+            i = listings.getindex(listing)
+            listings[i].update(
+                salary = salary,
+                location = location,
+                delivery = delivery,
+                schedule = schedule,
+                list_date = list_date,
+                link = link,
+                notes = notes
+            )
+        else:
+            listing.update(
+                salary = salary,
+                location = location,
+                delivery = delivery,
+                schedule = schedule,
+                list_date = list_date,
+                link = link,
+                notes = notes
+            )
+            listings.append(listing)            
 
-if __name__ == "__main__":
+def get_gmail_results(query_pkt):
     service = get_gmail_service()
-    messages = fetch_job_emails(date_range=5)
-    
-    max_search = 100
-    found = 0
-    
-    all_links = []
+    messages = fetch_job_emails(query_pkt["senders"],
+                                additional_filters=query_pkt["gmail_additional_filters"])
+
+    listings = set()
     for msg in messages:
         body = get_email_body(service, msg['id'])
-        # print(body)
-        found += 1
         links = extract_job_links(body)
-        if(found == max_search):
-            break
-        # all_links.extend(links)
