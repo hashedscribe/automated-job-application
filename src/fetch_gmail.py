@@ -4,6 +4,7 @@ import re
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from job_class import JobListing
+from gmail_services.linkedin_handler import make_linkedin_listings
 
 # get the search profile from config
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'config'))
@@ -46,36 +47,6 @@ def get_email_body(service, msg_id):
             return base64.urlsafe_b64decode(data).decode('utf-8')
     return ''
 
-def make_linkedin_listing(url, text):
-    # given the text, are we able to get enough information ? not sure
-    # visually i see hour if possible , company name, and location
-    # also bracket remote but idk if thats a full indicator
-    
-    # def could try lol
-    
-    # i think i need to fetch the outer <a>, that's what i was picking up before
-    # so i can use regex and have the nested linking !! huge.
-    
-    # so we go by sender and then just want to handle all the linkedin things
-    # per email, we want to match to the following. rn it seems like the regex 
-    # looks something like
-
-    # acc gonna do it in another file so it's easily changeable 
-    
-    print(url, text)
-    
-    linkedin = r'https?://www\.linkedin\.com[^\s"<>]*/[\d]+/'
-    linkedin_match = re.match(linkedin, url)
-    
-    sanitized_url = ""
-    if linkedin_match:
-        sanitized_url = linkedin_match.group().replace("/comm", "")
-    else:
-        return None
-        
-    clean_text = re.sub(r'<[^>]+>', '', text).strip()
-    
-    return (sanitized_url, clean_text)
 
 def handle_indeed(url, text):
     indeed = r'https?://www\.indeed\.com[^\s"<>]*'
@@ -89,30 +60,31 @@ def handle_indeed(url, text):
     
     return (sanitized_url, clean_text)
     
+    
+def get_gmail_results(query_pkt):
+    service = get_gmail_service()
+    messages = fetch_job_emails(query_pkt["senders"],
+                                additional_filters=query_pkt["gmail_additional_filters"])
 
-def extract_job_links(html):
-    # pulls all job URLs out of the email body
-    # i think this needs to change because linkedin weird
-    listings = []
-    pattern = r'<a[^>]+href=["\']?(https?://[^\s"<>]*jobs[^\s"<>]*)["\']?[^>]*>(.*?)</a>'
-    matches = re.findall(pattern, html, re.DOTALL)
-    
-    # all the fields we could want to fill
-    
-    for url, text in matches:
-        res = None
-        if "linkedin" in url:
-            res = make_linkedin_listing(url, text)
-        elif "indeed" in url:
-            res = handle_indeed(url, text)
-        else:
+    listings_info = []
+    for msg in messages:
+        html = get_email_body(service, msg['id'])
+        if "linkedin" in html:
+            listings_info += make_linkedin_listings(html)
+        elif "indeed" in html:
+            print("indeed handler not implemented")
             continue
-        
+            # listings_info += make_indeed_listings(html)
+    
+    
+    # for all the info found per listing off linkedin/indeed/other places
+    listings = []
+    for res in listings_info:
         if res != None:
             (title, company, salary, location, delivery, schedule, list_date,
-             link, notes) = res
+                link, notes) = res
         else:
-            continue
+            return None
         
         listing = JobListing(title, company)
         # if we already seen this listing, update the information
@@ -139,14 +111,9 @@ def extract_job_links(html):
                 link = link,
                 notes = notes
             )
-            listings.append(listing)            
+            listings.append(listing)
 
-def get_gmail_results(query_pkt):
-    service = get_gmail_service()
-    messages = fetch_job_emails(query_pkt["senders"],
-                                additional_filters=query_pkt["gmail_additional_filters"])
-
-    listings = set()
-    for msg in messages:
-        body = get_email_body(service, msg['id'])
-        links = extract_job_links(body)
+    for listing in listings:
+        print(listing)
+    
+    return listings

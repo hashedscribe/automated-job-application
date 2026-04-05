@@ -69,3 +69,5 @@ def get_serp_results(query_pkt):
     
     for listing in listings:
         print(listing)
+    
+    return listings
